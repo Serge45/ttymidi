@@ -18,19 +18,19 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
-#include <sys/stat.h>
+#include <stdio.h>
+// Linux-specific
+#include <argp.h>
 #include <fcntl.h>
 #include <termios.h>
-#include <stdio.h>
-#include <argp.h>
-#include <alsa/asoundlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <signal.h>
 #include <pthread.h>
-// Linux-specific
 #include <linux/serial.h>
 #include <linux/ioctl.h>
 #include <asm/ioctls.h>
+#include <alsa/asoundlib.h>
 
 #define FALSE                         0
 #define TRUE                          1
@@ -382,7 +382,7 @@ void* read_midi_from_alsa(void* seq)
 	seq_handle = seq;
 
 	npfd = snd_seq_poll_descriptors_count(seq_handle, POLLIN);
-	pfd = (struct pollfd*) alloca(npfd * sizeof(struct pollfd));
+	pfd = (struct pollfd*) malloc(npfd * sizeof(struct pollfd));
 	snd_seq_poll_descriptors(seq_handle, pfd, npfd, POLLIN);	
 
 	while (run) 
