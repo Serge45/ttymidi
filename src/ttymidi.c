@@ -394,12 +394,13 @@ void* read_midi_from_alsa(void* seq)
 	}	
 
 	printf("\nStopping [PC]->[Hardware] communication...");
+    return 0;
 }
 
 void* read_midi_from_serial_port(void* seq) 
 {
 	char buf[3], msg[MAX_MSG_SIZE];
-	int i, msglen;
+	int msglen = 0;
 	
 	/* Lets first fast forward to first status byte... */
 	if (!arguments.printonly) {
@@ -476,6 +477,7 @@ void* read_midi_from_serial_port(void* seq)
 		/* parse MIDI message */
 		else parse_midi_command(seq, port_out_id, buf);
 	}
+    return 0;
 }
 
 /* --------------------------------------------------------------------- */
@@ -485,8 +487,6 @@ int main(int argc, char** argv)
 {
 	//arguments arguments;
 	struct termios oldtio, newtio;
-	struct serial_struct ser_info;
-	char* modem_device = "/dev/ttyS0";
 	snd_seq_t *seq;
 
 	arg_set_defaults(&arguments);
@@ -515,7 +515,7 @@ int main(int argc, char** argv)
 	tcgetattr(serial, &oldtio); 
 
 	/* clear struct for new port settings */
-	bzero(&newtio, sizeof(newtio)); 
+	memset(&newtio, 0, sizeof(newtio)); 
 
 	/* 
 	 * BAUDRATE : Set bps rate. You could also use cfsetispeed and cfsetospeed.
@@ -557,6 +557,7 @@ int main(int argc, char** argv)
 	tcsetattr(serial, TCSANOW, &newtio);
 
 	// Linux-specific: enable low latency mode (FTDI "nagling off")
+//  struct serial_struct ser_info;
 //	ioctl(serial, TIOCGSERIAL, &ser_info);
 //	ser_info.flags |= ASYNC_LOW_LATENCY;
 //	ioctl(serial, TIOCSSERIAL, &ser_info);
@@ -572,13 +573,12 @@ int main(int argc, char** argv)
 
 	/* Starting thread that is polling alsa midi in port */
 	pthread_t midi_out_thread, midi_in_thread;
-	int iret1, iret2;
 	run = TRUE;
-	iret1 = pthread_create(&midi_out_thread, NULL, read_midi_from_alsa, (void*) seq);
+	pthread_create(&midi_out_thread, NULL, read_midi_from_alsa, (void*) seq);
 	/* And also thread for polling serial data. As serial is currently read in
            blocking mode, by this we can enable ctrl+c quiting and avoid zombie
            alsa ports when killing app with ctrl+z */
-	iret2 = pthread_create(&midi_in_thread, NULL, read_midi_from_serial_port, (void*) seq);
+	pthread_create(&midi_in_thread, NULL, read_midi_from_serial_port, (void*) seq);
 	signal(SIGINT, exit_cli);
 	signal(SIGTERM, exit_cli);
 
