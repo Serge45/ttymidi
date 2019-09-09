@@ -376,13 +376,12 @@ void write_midi_action_to_serial_port(snd_seq_t* seq_handle)
 void* read_midi_from_alsa(void* seq) 
 {
 	int npfd;
-	struct pollfd* pfd;
 	snd_seq_t* seq_handle;
 
 	seq_handle = seq;
 
 	npfd = snd_seq_poll_descriptors_count(seq_handle, POLLIN);
-	pfd = (struct pollfd*) malloc(npfd * sizeof(struct pollfd));
+	struct pollfd pfd[npfd];
 	snd_seq_poll_descriptors(seq_handle, pfd, npfd, POLLIN);	
 
 	while (run) 
